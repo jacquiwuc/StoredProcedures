@@ -1,0 +1,28 @@
+CREATE PROCEDURE [dbo].[Sample]
+    --add the parameter for stored procedure here
+    @setSiteId INT,
+    @termStart DATETIME,
+    @termEnd DATETIME
+AS
+BEGIN
+    --set NOCOUNT ON added to prevent extra results sets from
+    --interfering with SELECT statements
+    SET NOCOUNT ON;
+    
+    SELECT
+        b.SiteId, spt.ProgrammeCategoryId, a.[Day], a.Id, a.ChildId, a.HasAttended, l.Code, spt.TermId, pc.Code, b.BookingTypeId
+    FROM dbo.Attendance a(NOLOCK)
+        INNER JOIN dbo.Booking.Spt bspt(NOLOCK) ON a.Booking_SptId=bspt.Id
+        INNER JOIN dbo.Booking b(NOLOCK) ON bspt.BookingId=b.Id
+        LEFT OUTTER JOIN dbo.[Lookup] l(NOLOCK) ON b.BookingTypeId=l.Id
+        INNER JOIN dbo.Site_Program_Term spt(NOLOCK) ON spt.Id= bspt.sptId
+        INNER JOIN dbo.ProgrammeCategory pc(NOLOCK) ON pc.Id=spt.ProgrammeCategoryId
+        INNER JOIN dbo.Org o(NOLOCK) ON o.Id=spt.SiteId
+        INNER JOIN dbo.Term t(NOLOCK) ON t.Id=spt.TermId
+    WHERE a.IsActive=1
+        AND o.IsActive=1
+        AND a.[Day]>=@termStart
+        AND a.[Day]<=@termEnd
+        AND b.[Status] !='Pending'
+        AND b.SiteId=@setSiteId
+    GROUP BY b.SiteId, spt.ProgrammeCategoryId, a.[Day], a.Id, a.ChildId, a.HasAttended, l.Code, spt.TermId, pc.Code, b.BookingTypeId
